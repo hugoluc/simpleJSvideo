@@ -15,7 +15,7 @@ function simplePlayer(_videoUrl,_subUrls) {
     this.downloadVideo(_videoUrl)
 
     this.video = document.createElement('video')
-    // this.video.src = _videoUrl
+    this.video.isLoaded = false
     this.container.className = "playerVideo"
     this.container.appendChild(this.video)
     this.container.appendChild(this.video)
@@ -29,6 +29,7 @@ function simplePlayer(_videoUrl,_subUrls) {
 
         }else{
             this.onloaded()
+            this.video.isReady = true
         }
 
     });
@@ -36,12 +37,15 @@ function simplePlayer(_videoUrl,_subUrls) {
 
     this.conntrols = {}
     this.controlContainer = document.createElement('div')
+    this.controlContainer.className = "controlContainer"
     this.container.appendChild(this.controlContainer)
     
-    this.conntrols.subtitles = new subtilteControl(_subUrls, this.video, this.container)
-    this.conntrols.timeLine = new timeLineControl(this.video)
+    this.btnsContainer = document.createElement('div')
+    this.btnsContainer.className = "btnsContainer"
+    this.controlContainer.appendChild(this.btnsContainer)
 
-    
+    this.conntrols.timeLine = new timeLineControl(this.video, this.btnsContainer) 
+    this.conntrols.subtitles = new subtilteControl(_subUrls, this.video, this.container, this.btnsContainer)
 
 }
 
@@ -58,7 +62,7 @@ simplePlayer.prototype.downloadVideo = function(_url){
        if (this.status === 200) {
           var videoBlob = this.response;
           var vid = URL.createObjectURL(videoBlob); // IE10+
-          console.log(vid)
+          console.log(" video downloaded")
           // Video is now downloaded
           // and we can set it as source on the video element
           _this.video.src = vid;
@@ -77,11 +81,13 @@ simplePlayer.prototype.load = function(){
     this.conntrols.subtitles.setup()
 }
 
+
 simplePlayer.prototype.selectSubtitle = function(_id){
 
     this.conntrols.subtitles.selectSubtitle(_id)
 
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Timeline Controls                            /////////
@@ -89,20 +95,71 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video){
+function timeLineControl(_video,_parent){
 
     this.video = _video
     _video.addEventListener('timeupdate', (_event)=>{
-        _event.target.currentTime
+        
+        if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
+        this.timeUpdated(_event.target.currentTime )
+
     })
+
+    this.container = document.createElement('div')
+    this.container.className = "timeLineControls"
+    _parent.appendChild(this.container)
+
+    this.playBtn = document.createElement('div')
+    this.playBtn.className = "playBtn"
+    this.container.appendChild(this.playBtn)
+
+    this.timeLine = document.createElement('div')
+    this.timeLine.className = "timeLine"
+    this.container.appendChild(this.timeLine)
+
+    this.timeLine.addEventListener('touchmove', e => {
+        if (!this.video.isReady) return;
+        var rect = e.target.getBoundingClientRect();
+        var x = e.targetTouches[0].pageX - rect.left;
+        this.setCurrentTime(x/rect.width)
+    })
+    this.timeLine.addEventListener('touchstart', e => {
+        if (!this.video.isReady) return;
+        var rect = e.target.getBoundingClientRect();
+        var x = e.targetTouches[0].pageX - rect.left;
+        this.setCurrentTime(x/rect.width)
+
+    })
+
+
+    this.totalTime = document.createElement('div')
+    this.totalTime.className = "totalTime"
+    this.timeLine.appendChild(this.totalTime)
+
+    this.currentTime = document.createElement('div')
+    this.currentTime.className = "currentTime"
+    this.timeLine.appendChild(this.currentTime)
+    this.currentTime.style.width = "0px"
+
+    this.timeCounter = document.createElement('div')
+    this.timeCounter.className = "timeCounter"
+    this.timeCounter.innerHTML = "00:00"
+    this.container.appendChild(this.timeCounter)
+
+    
 
 }
 
 timeLineControl.prototype.setCurrentTime = function (_percentage) {
-
-    this.video
+    this.video.currentTime = this.video.duration * _percentage
+    this.timeUpdated(this.video.currentTime)
     
+}
 
+timeLineControl.prototype.timeUpdated = function (_time) {
+
+    this.currentTime.style.width = (( this.timeLine.getBoundingClientRect().width * _time) / this.video.duration) + "px"
+    
 }
 
 
@@ -114,20 +171,26 @@ timeLineControl.prototype.setCurrentTime = function (_percentage) {
 //===================        Control Class        ====================
 //====================================================================
 
-function subtilteControl(_subUrls,_video,_parent){
+function subtilteControl(_subUrls,_video,_subParent, _controlParent){
+
+    this.controlContainer = document.createElement("div")
+    this.controlContainer.className = "subControlContainer"
+    _controlParent.appendChild(this.controlContainer)
 
     this.subtitles = []
-    this.container = document.createElement("div")
-    this.container.className = "subtitlesContainer"
-    _parent.appendChild(this.container)
+    this.subtitlesContainer = document.createElement("div")
+    this.subtitlesContainer.className = "subtitlesContainer"
+    _video.insertAdjacentElement("afterEnd", this.subtitlesContainer)
+
     this.activeSubtitle = ""
     this.defaultSubtitle = false
 
     for(var i = 0; i < _subUrls.length; i++ ){
-        var sub = new subtitle(_video,_subUrls[i], i, this.container)
+        var sub = new subtitle(_video,_subUrls[i], i, this.subtitlesContainer)
         this.subtitles.push( sub )
     }
 
+ 
 }
 
 subtilteControl.prototype.setup = function () {
