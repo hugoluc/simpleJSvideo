@@ -22,7 +22,7 @@ function simplePlayer(_videoUrl,_subUrls) {
     this.video.addEventListener('loadedmetadata', () => { 
 
         this.load()
-
+ 
         if(!this.loaded){
             this.loaded = true
             this.video.load()
