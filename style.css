@@ -33,7 +33,6 @@
 
 .subtitle{
    width: 1420px;
-   font-family: SFUIText-Regular;
    text-shadow: 0 2px 4px rgba(0,0,0,0.50);
 }
 
@@ -63,6 +62,7 @@
    width: 100%;
    display: flex;
    align-items: center;
+   margin-right: 55px;
 }
 
 
@@ -89,18 +89,73 @@
    
 }
 
+.timeCounter{
+
+   font-family: SFUIText-Regular;
+   font-size: 20px;
+   color: #FFFFFF;
+   letter-spacing: 0;
+   margin:25px;
+   width : 70px;
+
+}
+
 .playBtn{
    height: 95px;
-   width: 95px;
+   width: 129px;
+   margin-right: 55px;
+   background-color: white;
 }
+
 
 
 /* subtitle */
 
+.controlBg{
+
+   background-color: white;
+   width: 100%;
+   transition: height 400ms;
+   transition-delay : 50ms;
+
+}
+
 .subControlContainer{
 
-   width: 300px;
+   width: 225px;
    height: 56px;
    background-color: white;
+   position: relative;
+   display: flex ;
+   align-items: flex-end;
+
 
 } 
+
+.subControl{
+   position: absolute;
+   font-size: 20px;
+   color: #727272;
+   letter-spacing: 0;
+   padding-left: 30px;
+   width: calc(100% - 30px);
+   display: flex;
+   align-items: center;
+   opacity: 1;
+   transition : transform 500ms, opacity 200ms;
+   font-family: sans-serif;
+}
+
+
+.subControl.active{
+
+   font-weight: bolder;
+   font-size: 22px;
+
+}
+
+.subControl.hidden{
+
+   opacity: 0;
+
+}

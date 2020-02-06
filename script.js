@@ -3,7 +3,7 @@
 /////////                               Player class                              /////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function simplePlayer(_videoUrl,_subUrls) {
+function simplePlayer(_videoUrl,_subs) {
 
     this.container = document.createElement('div')
     this.container.className = "playerContainer"
@@ -35,7 +35,7 @@ function simplePlayer(_videoUrl,_subUrls) {
     });
     
 
-    this.conntrols = {}
+    this.controls = {}
     this.controlContainer = document.createElement('div')
     this.controlContainer.className = "controlContainer"
     this.container.appendChild(this.controlContainer)
@@ -44,8 +44,8 @@ function simplePlayer(_videoUrl,_subUrls) {
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
 
-    this.conntrols.timeLine = new timeLineControl(this.video, this.btnsContainer) 
-    this.conntrols.subtitles = new subtilteControl(_subUrls, this.video, this.container, this.btnsContainer)
+    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer) 
+    this.controls.subtitles = new subtilteControl(_subs, this.video, this.container, this.btnsContainer)
 
 }
 
@@ -57,14 +57,12 @@ simplePlayer.prototype.downloadVideo = function(_url){
     var _this = this
     
     req.onload = function() {
-       // Onload is triggered even on 404
-       // so we need to check the status code
+
        if (this.status === 200) {
+
           var videoBlob = this.response;
           var vid = URL.createObjectURL(videoBlob); // IE10+
-          console.log(" video downloaded")
-          // Video is now downloaded
-          // and we can set it as source on the video element
+
           _this.video.src = vid;
        }
     }
@@ -78,13 +76,13 @@ simplePlayer.prototype.downloadVideo = function(_url){
 
 
 simplePlayer.prototype.load = function(){
-    this.conntrols.subtitles.setup()
+    this.controls.subtitles.setup()
 }
 
 
 simplePlayer.prototype.selectSubtitle = function(_id){
 
-    this.conntrols.subtitles.selectSubtitle(_id)
+    this.controls.subtitles.selectSubtitle(_id)
 
 }
 
@@ -97,6 +95,7 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 // Pause/play controls
 function timeLineControl(_video,_parent){
 
+    this.isPlaying = false;
     this.video = _video
     _video.addEventListener('timeupdate', (_event)=>{
         
@@ -112,6 +111,16 @@ function timeLineControl(_video,_parent){
     this.playBtn = document.createElement('div')
     this.playBtn.className = "playBtn"
     this.container.appendChild(this.playBtn)
+    
+    this.playBtn.addEventListener('touchstart', e => {
+        if (!this.isPlaying) {
+            this.play()
+        }else{
+            this.pause()
+        }
+
+    })
+
 
     this.timeLine = document.createElement('div')
     this.timeLine.className = "timeLine"
@@ -155,9 +164,35 @@ timeLineControl.prototype.setCurrentTime = function (_percentage) {
     this.timeUpdated(this.video.currentTime)
     
 }
+timeLineControl.prototype.play = function (_time) {
+    
+    this.video.play()
+    this.isPlaying = true
+
+}
+
+timeLineControl.prototype.pause = function (_time) {
+
+    this.video.pause()
+    this.isPlaying = false
+
+}
 
 timeLineControl.prototype.timeUpdated = function (_time) {
 
+    // console.log(this.timeLine.getBoundingClientRect().width)
+    // console.log(_time)
+    // console.log(this.video.duration)
+    // console.log((( this.timeLine.getBoundingClientRect().width * _time) / this.video.duration) + "px")
+    // console.log(">>>>>>>>>>>>>>>>")
+
+    var minutes = parseInt(_time/60)
+    minutes = minutes.toString().length > 1 ? minutes : ("0" + minutes)
+        
+    var seconds = parseInt(_time%60)
+    seconds = seconds.toString().length > 1 ? seconds : ("0" + seconds) 
+
+    this.timeCounter.innerHTML = minutes + ":" + seconds
     this.currentTime.style.width = (( this.timeLine.getBoundingClientRect().width * _time) / this.video.duration) + "px"
     
 }
@@ -171,13 +206,38 @@ timeLineControl.prototype.timeUpdated = function (_time) {
 //===================        Control Class        ====================
 //====================================================================
 
-function subtilteControl(_subUrls,_video,_subParent, _controlParent){
+function subtilteControl(_subs,_video,_subParent, _controlParent){
 
+    //get opened menu height based on subtitle number
+    var menuItemSizes = {
+        itemHeight : 45,
+        margin : 26,
+    }
+    this.openMenuHeight = (2 * menuItemSizes.margin)  + (_subs.length * menuItemSizes.itemHeight)
+    this.menuClosed = false
+    this.animationEnded = true
+
+    //-------------------
+    //    container
+    //-------------------    
     this.controlContainer = document.createElement("div")
     this.controlContainer.className = "subControlContainer"
     _controlParent.appendChild(this.controlContainer)
 
+    //-------------------
+    //    background
+    //-------------------
+    this.controlBg = document.createElement("div")
+    this.controlBg.className = "controlBg"
+    this.controlBg.style.height = this.openMenuHeight
+    this.controlContainer.appendChild(this.controlBg)
+
+    //-------------------
+    //    subtitles
+    //-------------------
+    this.controls = []
     this.subtitles = []
+    
     this.subtitlesContainer = document.createElement("div")
     this.subtitlesContainer.className = "subtitlesContainer"
     _video.insertAdjacentElement("afterEnd", this.subtitlesContainer)
@@ -185,12 +245,79 @@ function subtilteControl(_subUrls,_video,_subParent, _controlParent){
     this.activeSubtitle = ""
     this.defaultSubtitle = false
 
-    for(var i = 0; i < _subUrls.length; i++ ){
-        var sub = new subtitle(_video,_subUrls[i], i, this.subtitlesContainer)
+    for(var i = 0; i < _subs.length; i++ ){
+        
+        var control = document.createElement("div")
+        control.id = i
+        control.className = "subControl"
+        control.innerHTML = _subs[i].title
+        control.addEventListener('touchstart', e => {
+            if (!this.animationEnded) return
+
+            this.animationEnded = false
+            if(!this.menuClosed){
+                this.selectSubtitle(e.target.id)
+                this.closeMenu()
+            }else{
+                this.openMenu()
+            }
+        })
+
+        control.addEventListener('webkitTransitionEnd', e => {
+            console.log(this.animationEnded )
+            this.animationEnded = true
+        })
+
+        this.controlContainer.appendChild(control)
+        this.controls.push(control)
+
+        var finalPos = ( menuItemSizes.itemHeight * i) + menuItemSizes.margin
+        control.setAttribute("finalpos", finalPos)
+        control.style.transform = "translateY(-" + finalPos +  "px)"
+        control.style.height = menuItemSizes.itemHeight +  "px"
+
+        var sub = new subtitle(_video,_subs[i], i, this.subtitlesContainer)
         this.subtitles.push( sub )
+
+        if (_subs[i].default) this.selectSubtitle(i)
+    }
+ 
+}
+
+
+
+subtilteControl.prototype.openMenu = function () {
+    
+    this.menuClosed = false
+    this.controlBg.style.height = this.openMenuHeight
+    
+    for(var i = 0; i < this.controls.length; i++ ){
+
+        this.controls[i].style.transform = "translateY(-" + this.controls[i].getAttribute("finalpos") +  "px)"
+        this.controls[i].classList.remove("hidden")    
+
+    }
+    
+
+}
+
+subtilteControl.prototype.closeMenu = function () {
+    
+    this.menuClosed = true
+    this.controlBg.style.height = "56px"
+
+    for(var i = 0; i < this.controls.length; i++ ){
+
+        if(this.controls[i].id == this.activeSubtitle.id){
+            var activeSubElement = this.controls[this.activeSubtitle.id]
+            activeSubElement.style.transform = "translateY(-" + 5 +  "px)"
+        }else{
+            this.controls[i].classList.add("hidden")    
+        }
+
     }
 
- 
+
 }
 
 subtilteControl.prototype.setup = function () {
@@ -201,27 +328,35 @@ subtilteControl.prototype.setup = function () {
 
 }
 
+
 subtilteControl.prototype.selectSubtitle = function(_id) {
 
-    if (this.activeSubtitle) this.activeSubtitle.makeActive( false )
+    if (this.activeSubtitle) {
+        this.controls[this.activeSubtitle.id].className = "subControl"
+        this.activeSubtitle.makeActive( false )
+    }
+
+    this.controls[_id].classList.add("active")  
     this.activeSubtitle = this.subtitles[_id]
     this.activeSubtitle.makeActive( true )
+
 }
 
 //====================================================================
 //===================        Subtitle Class        ===================
 //====================================================================
 
-function subtitle(_video,_url,_id,_parent){
+function subtitle(_video,_sub,_id,_parent){
 
+    this.id = _id
     this.isActive = false
     this.track = document.createElement("track")
-    this.track.src = _url
+    this.track.src = _sub.url
     this.track.kind = "subtitles"
     this.track.id = _id
     this.track.mode = "hidden"
 
-    if ( _id == 0 ) { this.track.setAttribute("default","") }
+    // if ( _id == 0 ) { this.track.setAttribute("default","") }
   
     _video.appendChild(this.track)
     _video.textTracks[_id].mode = "hidden"
@@ -294,12 +429,32 @@ subtitle.prototype.setup = function(){
 //====================================================================
 
 
-
-var video1 = new simplePlayer('videos/0/video.mp4',[ 
-    'videos/0/subs/en.vtt',
-    'videos/0/subs/de.vtt'
+var video1 = new simplePlayer('videos/0/video.mp4',[
+    { 
+        type : "text",
+        url : 'videos/0/subs/es.vtt' ,
+        title : "Ingles",
+        default : false
+    },
+    { 
+        type : "text",
+        url : 'videos/0/subs/de.vtt' ,
+        title : "Espanhol",
+        default : false
+    },
+    { 
+        type : "text",
+        url : 'videos/0/subs/en.vtt' ,
+        title : 'Portugês',
+        default : true
+    },
+    // { 
+    //     type : "libras",
+    //     url : 'libras.webm' ,
+    //     title : "Libras"
+    // },
     ]
 )
 
 document.body.appendChild(video1.container)
-video1.selectSubtitle(1)
+// video1.selectSubtitle(1)
