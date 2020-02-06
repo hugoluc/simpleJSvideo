@@ -36,7 +36,6 @@
    text-shadow: 0 2px 4px rgba(0,0,0,0.50);
 }
 
-
 .controlContainer{
    width: 100%;
    height: 540px;
@@ -55,6 +54,7 @@
    width : 100%
 }
 
+
 /* TIMELINE */
 
 .timeLineControls{
@@ -64,7 +64,6 @@
    align-items: center;
    margin-right: 55px;
 }
-
 
 .timeLine{
    height: 100px;
@@ -78,7 +77,6 @@
    background-color: white;
    height: 6px;
    position: absolute;
-   
 }
 
 .totalTime{
@@ -86,18 +84,15 @@
    height: 4px;
    width: 100%;
    position: absolute;
-   
 }
 
 .timeCounter{
-
    font-family: SFUIText-Regular;
    font-size: 20px;
    color: #FFFFFF;
    letter-spacing: 0;
    margin:25px;
    width : 70px;
-
 }
 
 .playBtn{
@@ -107,29 +102,24 @@
    background-color: white;
 }
 
-
-
+/* ============== */
 /* subtitle */
+/* ============== */
 
 .controlBg{
-
    background-color: white;
    width: 100%;
    transition: height 400ms;
    transition-delay : 50ms;
-
 }
 
 .subControlContainer{
-
    width: 225px;
    height: 56px;
    background-color: white;
    position: relative;
    display: flex ;
    align-items: flex-end;
-
-
 } 
 
 .subControl{
@@ -146,16 +136,18 @@
    font-family: sans-serif;
 }
 
-
 .subControl.active{
-
    font-weight: bolder;
    font-size: 22px;
-
 }
 
 .subControl.hidden{
-
    opacity: 0;
+}
 
+.librasVideo{
+   bottom: 0px;
+   right: 0px;
+   background: rgba(0,0,0,0.2);
+   width : 600px;
 }

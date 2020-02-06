@@ -44,7 +44,7 @@ function simplePlayer(_videoUrl,_subs) {
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
 
-    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer) 
+    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer,  this.controls) 
     this.controls.subtitles = new subtilteControl(_subs, this.video, this.container, this.btnsContainer)
 
 }
@@ -87,21 +87,21 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 }
 
 
+
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Timeline Controls                            /////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video,_parent){
+function timeLineControl(_video,_parent,_controls){
 
+    this.controls = _controls
     this.isPlaying = false;
     this.video = _video
-    _video.addEventListener('timeupdate', (_event)=>{
-        
+    _video.addEventListener('timeupdate', (_event)=>{ 
         if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
         this.timeUpdated(_event.target.currentTime )
-
     })
 
     this.container = document.createElement('div')
@@ -111,21 +111,17 @@ function timeLineControl(_video,_parent){
     this.playBtn = document.createElement('div')
     this.playBtn.className = "playBtn"
     this.container.appendChild(this.playBtn)
-    
     this.playBtn.addEventListener('touchstart', e => {
         if (!this.isPlaying) {
             this.play()
         }else{
             this.pause()
         }
-
     })
-
 
     this.timeLine = document.createElement('div')
     this.timeLine.className = "timeLine"
     this.container.appendChild(this.timeLine)
-
     this.timeLine.addEventListener('touchmove', e => {
         if (!this.video.isReady) return;
         var rect = e.target.getBoundingClientRect();
@@ -137,9 +133,7 @@ function timeLineControl(_video,_parent){
         var rect = e.target.getBoundingClientRect();
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
-
-    })
-
+    })  
 
     this.totalTime = document.createElement('div')
     this.totalTime.className = "totalTime"
@@ -155,17 +149,18 @@ function timeLineControl(_video,_parent){
     this.timeCounter.innerHTML = "00:00"
     this.container.appendChild(this.timeCounter)
 
-    
-
 }
 
 timeLineControl.prototype.setCurrentTime = function (_percentage) {
-    this.video.currentTime = this.video.duration * _percentage
+    this.video.currentTime =  this.video.duration * _percentage
+    this.controls.subtitles.setCurrentTime(this.video.duration * _percentage)
     this.timeUpdated(this.video.currentTime)
     
 }
+
 timeLineControl.prototype.play = function (_time) {
     
+    this.controls.subtitles.play()
     this.video.play()
     this.isPlaying = true
 
@@ -173,6 +168,7 @@ timeLineControl.prototype.play = function (_time) {
 
 timeLineControl.prototype.pause = function (_time) {
 
+    this.controls.subtitles.pause()
     this.video.pause()
     this.isPlaying = false
 
@@ -247,6 +243,7 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
 
     for(var i = 0; i < _subs.length; i++ ){
         
+        //add controls
         var control = document.createElement("div")
         control.id = i
         control.className = "subControl"
@@ -264,10 +261,8 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
         })
 
         control.addEventListener('webkitTransitionEnd', e => {
-            console.log(this.animationEnded )
             this.animationEnded = true
         })
-
         this.controlContainer.appendChild(control)
         this.controls.push(control)
 
@@ -276,15 +271,31 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
         control.style.transform = "translateY(-" + finalPos +  "px)"
         control.style.height = menuItemSizes.itemHeight +  "px"
 
-        var sub = new subtitle(_video,_subs[i], i, this.subtitlesContainer)
-        this.subtitles.push( sub )
 
+        //add subtitles
+        var sub;
+        console.log(_subs[i].type)
+        if(_subs[i].type == "text"){
+            sub = new subtitle(_video,_subs[i], i, this.subtitlesContainer)
+        }else{
+            console.log("dsafsdfasd")
+            sub = new libras(_video,_subs[i], i, _subParent)
+            this.libras = sub
+        }
+        this.subtitles.push( sub )
         if (_subs[i].default) this.selectSubtitle(i)
+ 
     }
  
 }
 
+subtilteControl.prototype.play = function () {
+    this.libras.video.play()
+}
 
+subtilteControl.prototype.pause = function () {
+    this.libras.video.pause()
+}
 
 subtilteControl.prototype.openMenu = function () {
     
@@ -297,7 +308,6 @@ subtilteControl.prototype.openMenu = function () {
         this.controls[i].classList.remove("hidden")    
 
     }
-    
 
 }
 
@@ -342,6 +352,12 @@ subtilteControl.prototype.selectSubtitle = function(_id) {
 
 }
 
+subtilteControl.prototype.setCurrentTime = function (_time) {
+    this.libras.video.currentTime = _time
+}
+
+
+
 //====================================================================
 //===================        Subtitle Class        ===================
 //====================================================================
@@ -355,13 +371,15 @@ function subtitle(_video,_sub,_id,_parent){
     this.track.kind = "subtitles"
     this.track.id = _id
     this.track.mode = "hidden"
-
-    // if ( _id == 0 ) { this.track.setAttribute("default","") }
-  
     _video.appendChild(this.track)
-    _video.textTracks[_id].mode = "hidden"
+    
+    console.log(
+        _video.textTracks.length,
+        _video.textTracks[_video.textTracks.length-1],
+        _id)
+    _video.textTracks[_video.textTracks.length-1].mode = "hidden"
 
-    this.textTrack = _video.textTracks[_id]
+    this.textTrack = _video.textTracks[_video.textTracks.length-1]
 
     this.subContainer = document.createElement("div")
     this.subContainer.className = "subtitle"
@@ -370,7 +388,6 @@ function subtitle(_video,_sub,_id,_parent){
     this.cueExit()
 
 }
-
 
 subtitle.prototype.makeActive = function(_isActve){
 
@@ -384,21 +401,22 @@ subtitle.prototype.makeActive = function(_isActve){
 
 }
 
-
 subtitle.prototype.cueEnter = function(_text){
-
+    
     this.subContainer.innerHTML = _text.replace(/(\r\n|\n|\r)/gm, "<br />");
 
     if  ( !this.isActive) return
     this.subContainer.style.display = "block"
 }
 
-
 subtitle.prototype.cueExit = function(){
     this.subContainer.style.display = "none"
 }
 
 subtitle.prototype.setup = function(){
+
+    console.log(this.textTrack);
+    
 
     for (var i = 0; i < this.textTrack.cues.length; i ++) {
         
@@ -412,24 +430,81 @@ subtitle.prototype.setup = function(){
 
 }
 
-
-
-// var video = document.querySelector("#video")
-// var subContainer = document.querySelector("#subtitle")
-// var sub1 = new subtitle(video.textTracks[0],subContainer)
-
-
-// video.addEventListener('loadedmetadata', () => { 
-//     console.log("==")
-//     sub1.setup()
-// });
-
 //====================================================================
 //===================          Sign Language       ===================
 //====================================================================
 
+function libras(_video,_sub,_id,_parent){
+
+    console.log("asdasdasdasda")
+    this.id = _id
+    this.video = document.createElement("video")
+    this.video.className = "librasVideo"
+    _parent.appendChild(this.video)
+    this.downloadVideo(_sub.url)
+    
+}
+
+libras.prototype.setup = function(){
+    this.makeActive(false)
+}
+
+
+libras.prototype.makeActive = function(_isActve){
+
+    this.isActive = _isActve
+    
+    if (_isActve){
+        this.video.style.display = "block"
+    }else{
+        this.video.style.display = "none"
+    }
+
+}
+
+
+libras.prototype.downloadVideo = function(_url){
+
+    var req = new XMLHttpRequest();
+    req.open('GET', _url, true);
+    req.responseType = 'blob';
+    var _this = this
+    
+    req.onload = function() {
+
+       if (this.status === 200) {
+
+          var videoBlob = this.response;
+          var vid = URL.createObjectURL(videoBlob); // IE10+
+
+          _this.video.src = vid;
+       }
+    }
+    req.onerror = function() {
+       // Error
+    }
+    
+    req.send();
+
+}
+
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
 
 var video1 = new simplePlayer('videos/0/video.mp4',[
+    { 
+        type : "libras",
+        url : 'libras.webm' ,
+        title : "Libras",
+        default : false
+    },
     { 
         type : "text",
         url : 'videos/0/subs/es.vtt' ,
@@ -448,11 +523,7 @@ var video1 = new simplePlayer('videos/0/video.mp4',[
         title : 'Portugês',
         default : true
     },
-    // { 
-    //     type : "libras",
-    //     url : 'libras.webm' ,
-    //     title : "Libras"
-    // },
+
     ]
 )
 
