@@ -3,7 +3,7 @@
 /////////                               Player class                              /////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function simplePlayer(_videoUrl,_subs) {
+function simplePlayer(_videoUrl,_subs,_callBack) {
 
     this.container = document.createElement('div')
     this.container.className = "playerContainer"
@@ -11,13 +11,13 @@ function simplePlayer(_videoUrl,_subs) {
     this.onloaded = function(){ 
         console.log("video loaded")
     }
-
-    this.downloadVideo(_videoUrl)
+    document.body.appendChild(this.container)
+    // this.downloadVideo(_videoUrl)
 
     this.video = document.createElement('video')
     this.video.isLoaded = false
+    this.video.src = _videoUrl
     this.container.className = "playerVideo"
-    this.container.appendChild(this.video)
     this.container.appendChild(this.video)
     this.video.addEventListener('loadedmetadata', () => { 
 
@@ -30,6 +30,7 @@ function simplePlayer(_videoUrl,_subs) {
         }else{
             this.onloaded()
             this.video.isReady = true
+            _callBack()
         }
 
     });
@@ -48,32 +49,6 @@ function simplePlayer(_videoUrl,_subs) {
     this.controls.subtitles = new subtilteControl(_subs, this.video, this.container, this.btnsContainer)
 
 }
-
-simplePlayer.prototype.downloadVideo = function(_url){
-
-    var req = new XMLHttpRequest();
-    req.open('GET', _url, true);
-    req.responseType = 'blob';
-    var _this = this
-    
-    req.onload = function() {
-
-       if (this.status === 200) {
-
-          var videoBlob = this.response;
-          var vid = URL.createObjectURL(videoBlob); // IE10+
-
-          _this.video.src = vid;
-       }
-    }
-    req.onerror = function() {
-       // Error
-    }
-    
-    req.send();
-
-}
-
 
 simplePlayer.prototype.load = function(){
     this.controls.subtitles.setup()
@@ -274,11 +249,9 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
 
         //add subtitles
         var sub;
-        console.log(_subs[i].type)
         if(_subs[i].type == "text"){
             sub = new subtitle(_video,_subs[i], i, this.subtitlesContainer)
         }else{
-            console.log("dsafsdfasd")
             sub = new libras(_video,_subs[i], i, _subParent)
             this.libras = sub
         }
@@ -373,10 +346,10 @@ function subtitle(_video,_sub,_id,_parent){
     this.track.mode = "hidden"
     _video.appendChild(this.track)
     
-    console.log(
-        _video.textTracks.length,
-        _video.textTracks[_video.textTracks.length-1],
-        _id)
+    // console.log(
+    //     _video.textTracks.length,
+    //     _video.textTracks[_video.textTracks.length-1],
+    //     _id)
     _video.textTracks[_video.textTracks.length-1].mode = "hidden"
 
     this.textTrack = _video.textTracks[_video.textTracks.length-1]
@@ -402,7 +375,7 @@ subtitle.prototype.makeActive = function(_isActve){
 }
 
 subtitle.prototype.cueEnter = function(_text){
-    
+
     this.subContainer.innerHTML = _text.replace(/(\r\n|\n|\r)/gm, "<br />");
 
     if  ( !this.isActive) return
@@ -414,8 +387,6 @@ subtitle.prototype.cueExit = function(){
 }
 
 subtitle.prototype.setup = function(){
-
-    console.log(this.textTrack);
     
 
     for (var i = 0; i < this.textTrack.cues.length; i ++) {
@@ -436,12 +407,12 @@ subtitle.prototype.setup = function(){
 
 function libras(_video,_sub,_id,_parent){
 
-    console.log("asdasdasdasda")
     this.id = _id
     this.video = document.createElement("video")
     this.video.className = "librasVideo"
+    this.video.src = _sub.url
     _parent.appendChild(this.video)
-    this.downloadVideo(_sub.url)
+    // this.downloadVideo(_sub.url)
     
 }
 
@@ -462,70 +433,56 @@ libras.prototype.makeActive = function(_isActve){
 
 }
 
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
+//====================================================================
 
-libras.prototype.downloadVideo = function(_url){
+var allVids = []
 
-    var req = new XMLHttpRequest();
-    req.open('GET', _url, true);
-    req.responseType = 'blob';
-    var _this = this
+var loadVideo = (_index) => {
+
+    console.log(_index)
     
-    req.onload = function() {
-
-       if (this.status === 200) {
-
-          var videoBlob = this.response;
-          var vid = URL.createObjectURL(videoBlob); // IE10+
-
-          _this.video.src = vid;
-       }
-    }
-    req.onerror = function() {
-       // Error
-    }
+    if (_index >= 7) return
+    var index = _index+1
+    var subs = [
+        { 
+            type : "libras",
+            url : 'libras.webm' ,
+            title : "Libras",
+            default : false
+        },
+        { 
+            type : "text",
+            url : 'videos/' + index + '/subs/es.vtt' ,
+            title : "Ingles",
+            default : false
+        },
+        { 
+            type : "text",
+            url : 'videos/' + index + '/subs/de.vtt' ,
+            title : "Espanhol",
+            default : false
+        },
+        { 
+            type : "text",
+            url : 'videos/' + index + '/subs/en.vtt' ,
+            title : 'Portugês',
+            default : true
+        },
     
-    req.send();
-
+        ]
+    
+        allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs, () => { loadVideo(index) } ))
+    
 }
 
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
-//====================================================================
+loadVideo(-1)
 
-var video1 = new simplePlayer('videos/0/video.mp4',[
-    { 
-        type : "libras",
-        url : 'libras.webm' ,
-        title : "Libras",
-        default : false
-    },
-    { 
-        type : "text",
-        url : 'videos/0/subs/es.vtt' ,
-        title : "Ingles",
-        default : false
-    },
-    { 
-        type : "text",
-        url : 'videos/0/subs/de.vtt' ,
-        title : "Espanhol",
-        default : false
-    },
-    { 
-        type : "text",
-        url : 'videos/0/subs/en.vtt' ,
-        title : 'Portugês',
-        default : true
-    },
-
-    ]
-)
-
-document.body.appendChild(video1.container)
 // video1.selectSubtitle(1)
