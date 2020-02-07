@@ -3,7 +3,7 @@
 /////////                               Player class                              /////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function simplePlayer(_videoUrl,_subs,_callBack) {
+function simplePlayer(_videoUrl,_subs) { 
 
     this.container = document.createElement('div')
     this.container.className = "playerContainer"
@@ -19,6 +19,11 @@ function simplePlayer(_videoUrl,_subs,_callBack) {
     this.video.src = _videoUrl
     this.container.className = "playerVideo"
     this.container.appendChild(this.video)
+    this.video.addEventListener('touchstart', e => {
+
+        this.controls.timeLine.togglePlay()
+
+    })
     this.video.addEventListener('loadedmetadata', () => { 
 
         this.load()
@@ -30,22 +35,23 @@ function simplePlayer(_videoUrl,_subs,_callBack) {
         }else{
             this.onloaded()
             this.video.isReady = true
-            _callBack()
         }
 
     });
     
-
+    //background
     this.controls = {}
     this.controlContainer = document.createElement('div')
     this.controlContainer.className = "controlContainer"
     this.container.appendChild(this.controlContainer)
-    
+
+    //controlers
     this.btnsContainer = document.createElement('div')
+    this.btnsContainer.style.transform = "translate(0px, px)"
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
-
-    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer,  this.controls) 
+    
+    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer, this.controls, this.controlContainer) 
     this.controls.subtitles = new subtilteControl(_subs, this.video, this.container, this.btnsContainer)
 
 }
@@ -54,13 +60,11 @@ simplePlayer.prototype.load = function(){
     this.controls.subtitles.setup()
 }
 
-
 simplePlayer.prototype.selectSubtitle = function(_id){
 
     this.controls.subtitles.selectSubtitle(_id)
 
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -69,11 +73,20 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video,_parent,_controls){
+function timeLineControl(_video,_parent,_controls, _bg){
 
+    this.btnsContainer = _parent
+    this.bg = _bg
     this.controls = _controls
     this.isPlaying = false;
     this.video = _video
+    this.video.addEventListener('touchstart', e => {
+
+        this.openMenu()
+        console.log("asdfasdefsdf")
+
+    })
+
     _video.addEventListener('timeupdate', (_event)=>{ 
         if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
         this.timeUpdated(_event.target.currentTime )
@@ -126,7 +139,21 @@ function timeLineControl(_video,_parent,_controls){
 
 }
 
+timeLineControl.prototype.closeControls = function(){
+
+    this.btnsContainer.style.transform = "translate(0px, 200px)"
+    this.bg.style.opacity = 0
+
+}
+
+timeLineControl.prototype.openControls = function(){
+
+    this.btnsContainer.style.transform = "translate(0px, 0px)"
+    this.bg.style.opacity = 1
+}
+
 timeLineControl.prototype.setCurrentTime = function (_percentage) {
+    
     this.video.currentTime =  this.video.duration * _percentage
     this.controls.subtitles.setCurrentTime(this.video.duration * _percentage)
     this.timeUpdated(this.video.currentTime)
@@ -138,6 +165,7 @@ timeLineControl.prototype.play = function (_time) {
     this.controls.subtitles.play()
     this.video.play()
     this.isPlaying = true
+    this.closeControls()
 
 }
 
@@ -146,6 +174,7 @@ timeLineControl.prototype.pause = function (_time) {
     this.controls.subtitles.pause()
     this.video.pause()
     this.isPlaying = false
+    this.openControls()
 
 }
 
@@ -168,7 +197,19 @@ timeLineControl.prototype.timeUpdated = function (_time) {
     
 }
 
+timeLineControl.prototype.togglePlay = function (_time) {
 
+    if(this.isPlaying){
+
+        this.pause()
+
+    }else{
+
+        this.play()
+
+    }
+
+}
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Subtitle Control                             /////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -259,6 +300,8 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
         if (_subs[i].default) this.selectSubtitle(i)
  
     }
+
+    this.closeMenu()
  
 }
 
@@ -311,7 +354,6 @@ subtilteControl.prototype.setup = function () {
 
 }
 
-
 subtilteControl.prototype.selectSubtitle = function(_id) {
 
     if (this.activeSubtitle) {
@@ -328,8 +370,6 @@ subtilteControl.prototype.selectSubtitle = function(_id) {
 subtilteControl.prototype.setCurrentTime = function (_time) {
     this.libras.video.currentTime = _time
 }
-
-
 
 //====================================================================
 //===================        Subtitle Class        ===================
@@ -420,7 +460,6 @@ libras.prototype.setup = function(){
     this.makeActive(false)
 }
 
-
 libras.prototype.makeActive = function(_isActve){
 
     this.isActive = _isActve
@@ -445,12 +484,10 @@ libras.prototype.makeActive = function(_isActve){
 
 var allVids = []
 
-var loadVideo = (_index) => {
-
-    console.log(_index)
+for (let i = 0; i < 1; i++) {
     
-    if (_index >= 7) return
-    var index = _index+1
+    var index = i % 8
+
     var subs = [
         { 
             type : "libras",
@@ -479,10 +516,8 @@ var loadVideo = (_index) => {
     
         ]
     
-        allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs, () => { loadVideo(index) } ))
+        allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs ))
     
 }
-
-loadVideo(-1)
 
 // video1.selectSubtitle(1)
