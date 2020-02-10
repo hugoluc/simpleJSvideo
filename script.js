@@ -1,6 +1,6 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
-/////////                               Player class                              /////////
+/////////                               Player class                              ////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
 function simplePlayer(_videoUrl,_subs) { 
@@ -66,26 +66,18 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Timeline Controls                            /////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video,_parent,_controls, _bg){
+function timeLineControl(_video,_parent,_controls, _controlContainer){
 
     this.btnsContainer = _parent
-    this.bg = _bg
     this.controls = _controls
     this.isPlaying = false;
     this.video = _video
-    this.video.addEventListener('touchstart', e => {
-
-        this.openMenu()
-        console.log("asdfasdefsdf")
-
-    })
 
     _video.addEventListener('timeupdate', (_event)=>{ 
         if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
@@ -137,19 +129,31 @@ function timeLineControl(_video,_parent,_controls, _bg){
     this.timeCounter.innerHTML = "00:00"
     this.container.appendChild(this.timeCounter)
 
+
+    this.bg = document.createElement("div")
+    this.bg.className = "playerBg"
+    _controlContainer.insertBefore(this.bg,_controlContainer.childNodes[_controlContainer.childNodes.length])
+
 }
 
 timeLineControl.prototype.closeControls = function(){
 
-    this.btnsContainer.style.transform = "translate(0px, 200px)"
-    this.bg.style.opacity = 0
+    this.btnsContainer.classList.remove("open")
+    this.btnsContainer.classList.add("closed")
+    
+    this.bg.classList.remove("open")
+    this.bg.classList.add("closed")
 
 }
 
 timeLineControl.prototype.openControls = function(){
 
-    this.btnsContainer.style.transform = "translate(0px, 0px)"
-    this.bg.style.opacity = 1
+    this.btnsContainer.classList.add("open")
+    this.btnsContainer.classList.remove("closed")
+    
+    this.bg.classList.add("open")
+    this.bg.classList.remove("closed")
+    
 }
 
 timeLineControl.prototype.setCurrentTime = function (_percentage) {
@@ -451,6 +455,7 @@ function libras(_video,_sub,_id,_parent){
     this.video = document.createElement("video")
     this.video.className = "librasVideo"
     this.video.src = _sub.url
+    this.video.volume = 0
     _parent.appendChild(this.video)
     // this.downloadVideo(_sub.url)
     

@@ -20,22 +20,10 @@
    width: 100%;
 }
 
-.subtitlesContainer{
-   position: absolute;
-   color: white;
-   font-size: 40;
-   text-align: center;
-   bottom: 67px;
-   width: 100%;
-   height: 128px;
-   display: flex;
-   justify-content: center;
-}
 
-.subtitle{
-   width: 1420px;
-   text-shadow: 0 2px 4px rgba(0,0,0,0.50);
-}
+/* ============== */
+/* Controls */
+/* ============== */
 
 .controlContainer{
    width: 100%;
@@ -43,11 +31,29 @@
    position: absolute;
    display: flex;
    bottom: 0px;
-   background-image: linear-gradient(0deg, #1A1819 0%, rgba(26,25,25,0.00) 100%);
+   
    align-items: flex-end;
 }
 
+.playerBg{
+
+   position: absolute;
+   height: 300px;
+   width: 100%;
+   background-image: linear-gradient(0deg, #1A1819 0%, rgba(26,25,25,0.00) 100%);
+   transition: opacity 300ms;
+}
+
+.playerBg.closed{
+   opacity: 0;
+}
+
+.playerBg.open{
+   opacity: 1;
+}
+
 .btnsContainer{
+   z-index: 1;
    transition: transform 300ms;
    display: flex;
    margin: 65px;
@@ -55,8 +61,19 @@
    width : 100%
 }
 
+.btnsContainer.closed{
+   transform: translate(0px, 200px);
+}
 
+.btnsContainer.open{
+   transform: translate(0px, 0px);
+}
+
+
+
+/* ============== */
 /* TIMELINE */
+/* ============== */
 
 .timeLineControls{
    height: 100px;
@@ -97,6 +114,8 @@
 }
 
 .playBtn{
+   
+   z-index: 1;
    height: 95px;
    width: 129px;
    margin-right: 55px;
@@ -106,6 +125,23 @@
 /* ============== */
 /* subtitle */
 /* ============== */
+
+.subtitlesContainer{
+   position: absolute;
+   color: white;
+   font-size: 40;
+   text-align: center;
+   bottom: 67px;
+   width: 100%;
+   height: 128px;
+   display: flex;
+   justify-content: center;
+}
+
+.subtitle{
+   width: 1420px;
+   text-shadow: 0 2px 4px rgba(0,0,0,0.50);
+}
 
 .controlBg{
    background-color: white;
