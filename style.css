@@ -30,9 +30,12 @@
    height: 540px;
    position: absolute;
    display: flex;
-   bottom: 0px;
-   
+   bottom: 0px;   
    align-items: flex-end;
+}
+
+.controlContainer.closed{
+   display: none;
 }
 
 .playerBg{
@@ -42,14 +45,11 @@
    width: 100%;
    background-image: linear-gradient(0deg, #1A1819 0%, rgba(26,25,25,0.00) 100%);
    transition: opacity 300ms;
+   opacity: 1;
 }
 
 .playerBg.closed{
    opacity: 0;
-}
-
-.playerBg.open{
-   opacity: 1;
 }
 
 .btnsContainer{
@@ -58,17 +58,13 @@
    display: flex;
    margin: 65px;
    align-items: center;
-   width : 100%
+   width : 100%;
+   transform: translate(0px, 0px);
 }
 
 .btnsContainer.closed{
    transform: translate(0px, 200px);
 }
-
-.btnsContainer.open{
-   transform: translate(0px, 0px);
-}
-
 
 
 /* ============== */
@@ -157,8 +153,9 @@
    position: relative;
    display: flex;
    align-items: flex-end;
-
 } 
+
+
 
 .subControl{
    position: absolute;
@@ -189,3 +186,59 @@
    background: rgba(0,0,0,0.2);
    width : 600px !important;
 }
+/* ===================== */
+/* Play icon */
+/* ===================== */
+.play-pause {
+   
+   z-index: 1;
+   height: 95px;
+   width: 129px;
+   margin-right: 55px;
+   font-size: 48px;
+ }
+ 
+ .play-pause:before,
+ .play-pause:after {
+   position: absolute;
+   top: 50%;
+   transform: translateY(-50%);
+ }
+ 
+ .play-pause:before {
+   content: "";
+   left: 75px;
+   width: 0;
+   height: 45px;
+   border-top: 0 solid transparent;
+   border-bottom: 0 solid transparent;
+   border-left: 0.3em solid #fff;
+   transition: all 200ms linear;
+   opacity: 0;
+ }
+ 
+ .play-pause:after {
+   content: "";
+   left: 40;
+   width: 0;
+   height: 0;
+   border-top: .5em solid transparent;
+   border-bottom: .5em solid transparent;
+   border-left: 0.833334em solid #fff;
+   transition: all 200ms linear;
+ }
+ 
+ .play-pause.on:before {
+   border-top-width: 0;
+   border-bottom-width: 0;
+   border-left-width: .3em;
+   height: 45px;
+   opacity: 1;
+ }
+ 
+ .play-pause.on:after {
+   border-top-width: 0;
+   border-bottom-width: 0;
+   border-left-width: .3em;
+   height: 45px;
+ }

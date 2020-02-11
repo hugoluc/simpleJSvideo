@@ -20,18 +20,15 @@ function simplePlayer(_videoUrl,_subs) {
     this.container.className = "playerVideo"
     this.container.appendChild(this.video)
     this.video.addEventListener('touchstart', e => {
-
-        this.controls.timeLine.togglePlay()
-
+        this.controls.toggleControls()
     })
+
     this.video.addEventListener('loadedmetadata', () => { 
 
         this.load()
- 
         if(!this.loaded){
             this.loaded = true
             this.video.load()
-
         }else{
             this.onloaded()
             this.video.isReady = true
@@ -40,7 +37,6 @@ function simplePlayer(_videoUrl,_subs) {
     });
     
     //background
-    this.controls = {}
     this.controlContainer = document.createElement('div')
     this.controlContainer.className = "controlContainer"
     this.container.appendChild(this.controlContainer)
@@ -51,19 +47,12 @@ function simplePlayer(_videoUrl,_subs) {
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
     
-    this.controls.timeLine = new timeLineControl(this.video, this.btnsContainer, this.controls, this.controlContainer) 
-    this.controls.subtitles = new subtilteControl(_subs, this.video, this.container, this.btnsContainer)
+    this.controls = new timeLineControl( this.video, this.btnsContainer, this.controlContainer, this.container, _subs) 
 
 }
 
 simplePlayer.prototype.load = function(){
-    this.controls.subtitles.setup()
-}
-
-simplePlayer.prototype.selectSubtitle = function(_id){
-
-    this.controls.subtitles.selectSubtitle(_id)
-
+    this.controls.subtilteControl.setup()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -72,48 +61,79 @@ simplePlayer.prototype.selectSubtitle = function(_id){
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video,_parent,_controls, _controlContainer){
-
-    this.btnsContainer = _parent
-    this.controls = _controls
-    this.isPlaying = false;
-    this.video = _video
+function timeLineControl(_video, _parent, _controlContainer, _container, _subs){
 
     _video.addEventListener('timeupdate', (_event)=>{ 
         if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
         this.timeUpdated(_event.target.currentTime )
     })
 
+    this.btnsContainer = _parent
+    this.video = _video
+    this.controlContainer = _controlContainer
+
+    this.isPlaying = false;
+    this.userInteracted = false
+    this.menuOpen = true
+
+    this.createDOMelements(_parent, _controlContainer)
+
+    this.subtilteControl = new subtilteControl(  _subs, _video, _container, _parent)
+    this.subtilteControl.interactionHandler = () => { this.setEllapsedTime() }
+    this.subtilteControl.detectInactivity = () => { this.setEllapsedTime() }
+
+    console.log("-----------------");
+    this.waitTime = 5000
+    this.userInteracted = true
+    this.menuOpen = true
+    this.startTime = Date.now()
+    this.setEllapsedTime()
+    this.detectInactivity()    
+
+}
+
+timeLineControl.prototype.createDOMelements = function (_parent,_controlContainer) {
+    
     this.container = document.createElement('div')
     this.container.className = "timeLineControls"
     _parent.appendChild(this.container)
 
     this.playBtn = document.createElement('div')
-    this.playBtn.className = "playBtn"
+    this.playBtn.className = "play-pause"
     this.container.appendChild(this.playBtn)
     this.playBtn.addEventListener('touchstart', e => {
-        if (!this.isPlaying) {
-            this.play()
-        }else{
-            this.pause()
-        }
+        console.log("clocked on plat btn");
+        this.togglePlay()
     })
 
     this.timeLine = document.createElement('div')
     this.timeLine.className = "timeLine"
     this.container.appendChild(this.timeLine)
+    
     this.timeLine.addEventListener('touchmove', e => {
         if (!this.video.isReady) return;
+        
+        this.setEllapsedTime()
         var rect = e.target.getBoundingClientRect();
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
     })
+    
     this.timeLine.addEventListener('touchstart', e => {
+
         if (!this.video.isReady) return;
+        
+        this.setEllapsedTime()
         var rect = e.target.getBoundingClientRect();
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
     })  
+
+    // this.timeLine.addEventListener('touchend', e => {
+    //     this.detectInactivity()
+        
+    // })
+
 
     this.totalTime = document.createElement('div')
     this.totalTime.className = "totalTime"
@@ -136,50 +156,12 @@ function timeLineControl(_video,_parent,_controls, _controlContainer){
 
 }
 
-timeLineControl.prototype.closeControls = function(){
-
-    this.btnsContainer.classList.remove("open")
-    this.btnsContainer.classList.add("closed")
-    
-    this.bg.classList.remove("open")
-    this.bg.classList.add("closed")
-
-}
-
-timeLineControl.prototype.openControls = function(){
-
-    this.btnsContainer.classList.add("open")
-    this.btnsContainer.classList.remove("closed")
-    
-    this.bg.classList.add("open")
-    this.bg.classList.remove("closed")
-    
-}
-
 timeLineControl.prototype.setCurrentTime = function (_percentage) {
     
     this.video.currentTime =  this.video.duration * _percentage
-    this.controls.subtitles.setCurrentTime(this.video.duration * _percentage)
+    this.subtilteControl.setCurrentTime(this.video.duration * _percentage)
     this.timeUpdated(this.video.currentTime)
     
-}
-
-timeLineControl.prototype.play = function (_time) {
-    
-    this.controls.subtitles.play()
-    this.video.play()
-    this.isPlaying = true
-    this.closeControls()
-
-}
-
-timeLineControl.prototype.pause = function (_time) {
-
-    this.controls.subtitles.pause()
-    this.video.pause()
-    this.isPlaying = false
-    this.openControls()
-
 }
 
 timeLineControl.prototype.timeUpdated = function (_time) {
@@ -201,19 +183,126 @@ timeLineControl.prototype.timeUpdated = function (_time) {
     
 }
 
+//===============================================
+
+timeLineControl.prototype.play = function (_time) {
+    
+    this.subtilteControl.play()
+    this.video.play()
+    this.isPlaying = true
+    this.playBtn.classList.toggle("on")
+
+}
+
+timeLineControl.prototype.pause = function (_time) {
+
+    this.subtilteControl.pause()
+    this.video.pause()
+    this.isPlaying = false
+    this.playBtn.classList.toggle("on")
+
+}
+
 timeLineControl.prototype.togglePlay = function (_time) {
 
-    if(this.isPlaying){
-
-        this.pause()
-
+    if(!this.menuOpen){
+        this.toggleControls()
     }else{
+        
+        if(!this.isPlaying){
 
-        this.play()
+            this.play()
+            this.setEllapsedTime()
+    
+        }else{
+            
+            this.pause()
+    
+        }
 
     }
 
+    
+
 }
+
+//===============================================
+
+timeLineControl.prototype.closeControls = function(){    
+    
+    this.btnsContainer.classList.toggle("closed")
+    this.bg.classList.toggle("closed")
+    setTimeout(()=>{
+        this.controlContainer.classList.toggle("closed")    
+    }, 300)
+    this.menuOpen = false
+    this.ellapsedTime = 0
+}
+
+timeLineControl.prototype.openControls = function(){    
+
+    this.controlContainer.classList.toggle("closed")    
+    setTimeout(()=>{
+        this.btnsContainer.classList.toggle("closed")
+        this.bg.classList.toggle("closed")
+    },1)
+
+    console.log("-----------------");
+    this.menuOpen = true
+    
+    this.userInteracted = true
+    this.ellapsedTime = this.waitTime
+    this.detectInactivity()    
+
+}
+
+timeLineControl.prototype.toggleControls = function(){    
+    
+    if(!this.menuOpen){ 
+        this.openControls()
+    }
+    
+}
+
+//===============================================
+
+timeLineControl.prototype.setEllapsedTime = function(){    
+    
+    this.userInteracted = true
+    this.ellapsedTime = Date.now() - this.startTime
+    
+}
+
+timeLineControl.prototype.detectInactivity = function(){   
+
+    console.log("detecting user inactivity...");
+    
+    if(!this.menuOpen) return
+
+    if(!this.isPlaying){
+        console.log("video is paused try later");
+        this.startTime = Date.now()  
+        setTimeout(()=>{ this.detectInactivity() }, this.waitTime)
+        return    
+    }
+
+    if( !this.userInteracted ) {
+        
+        console.log("user inactive! Closing menu");
+        this.closeControls()
+    
+    }else{
+    
+        console.log("user active! setetting timer to:", this.waitTime, this.ellapsedTime);
+        this.startTime = Date.now()
+        this.userInteracted = false
+        setTimeout(()=>{ this.detectInactivity() }, this.ellapsedTime)
+    
+    }
+
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Subtitle Control                             /////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -232,6 +321,8 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
     this.openMenuHeight = (2 * menuItemSizes.margin)  + (_subs.length * menuItemSizes.itemHeight)
     this.menuClosed = false
     this.animationEnded = true
+    this.detectInactivity = function(){}
+    this.interactionHandler = function(){}
 
     //-------------------
     //    container
@@ -323,11 +414,11 @@ subtilteControl.prototype.openMenu = function () {
     this.controlBg.style.height = this.openMenuHeight
     
     for(var i = 0; i < this.controls.length; i++ ){
-
         this.controls[i].style.transform = "translateY(-" + this.controls[i].getAttribute("finalpos") +  "px)"
         this.controls[i].classList.remove("hidden")    
-
     }
+
+    this.interactionHandler()
 
 }
 
@@ -346,15 +437,8 @@ subtilteControl.prototype.closeMenu = function () {
         }
 
     }
-
-
-}
-
-subtilteControl.prototype.setup = function () {
-
-    for (let i = 0; i < this.subtitles.length; i++) {
-        this.subtitles[i].setup()
-    }
+    
+    // this.detectInactivity()
 
 }
 
@@ -374,6 +458,15 @@ subtilteControl.prototype.selectSubtitle = function(_id) {
 subtilteControl.prototype.setCurrentTime = function (_time) {
     this.libras.video.currentTime = _time
 }
+
+subtilteControl.prototype.setup = function () {
+
+    for (let i = 0; i < this.subtitles.length; i++) {
+        this.subtitles[i].setup()
+    }
+
+}
+
 
 //====================================================================
 //===================        Subtitle Class        ===================
@@ -457,7 +550,6 @@ function libras(_video,_sub,_id,_parent){
     this.video.src = _sub.url
     this.video.volume = 0
     _parent.appendChild(this.video)
-    // this.downloadVideo(_sub.url)
     
 }
 
@@ -525,4 +617,3 @@ for (let i = 0; i < 1; i++) {
     
 }
 
-// video1.selectSubtitle(1)
