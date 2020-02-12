@@ -27,7 +27,6 @@
 
 .controlContainer{
    width: 100%;
-   height: 540px;
    position: absolute;
    display: flex;
    bottom: 0px;   
@@ -41,7 +40,7 @@
 .playerBg{
 
    position: absolute;
-   height: 300px;
+   height: 540px;
    width: 100%;
    background-image: linear-gradient(0deg, #1A1819 0%, rgba(26,25,25,0.00) 100%);
    transition: opacity 300ms;

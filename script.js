@@ -79,16 +79,14 @@ function timeLineControl(_video, _parent, _controlContainer, _container, _subs){
     this.createDOMelements(_parent, _controlContainer)
 
     this.subtilteControl = new subtilteControl(  _subs, _video, _container, _parent)
-    this.subtilteControl.interactionHandler = () => { this.setEllapsedTime() }
-    this.subtilteControl.detectInactivity = () => { this.setEllapsedTime() }
+    this.subtilteControl.interactionHandler = () => { this.closeControlTimeout() }
 
     console.log("-----------------");
-    this.waitTime = 5000
-    this.userInteracted = true
     this.menuOpen = true
+    this.timouts = []
+    this.waitTime = 3000
     this.startTime = Date.now()
-    this.setEllapsedTime()
-    this.detectInactivity()    
+    this.closeControlTimeout()
 
 }
 
@@ -113,7 +111,7 @@ timeLineControl.prototype.createDOMelements = function (_parent,_controlContaine
     this.timeLine.addEventListener('touchmove', e => {
         if (!this.video.isReady) return;
         
-        this.setEllapsedTime()
+        this.closeControlTimeout()
         var rect = e.target.getBoundingClientRect();
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
@@ -123,7 +121,7 @@ timeLineControl.prototype.createDOMelements = function (_parent,_controlContaine
 
         if (!this.video.isReady) return;
         
-        this.setEllapsedTime()
+        this.closeControlTimeout()
         var rect = e.target.getBoundingClientRect();
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
@@ -212,7 +210,7 @@ timeLineControl.prototype.togglePlay = function (_time) {
         if(!this.isPlaying){
 
             this.play()
-            this.setEllapsedTime()
+            this.closeControlTimeout()
     
         }else{
             
@@ -247,12 +245,8 @@ timeLineControl.prototype.openControls = function(){
         this.bg.classList.toggle("closed")
     },1)
 
-    console.log("-----------------");
     this.menuOpen = true
-    
-    this.userInteracted = true
-    this.ellapsedTime = this.waitTime
-    this.detectInactivity()    
+    this.closeControlTimeout()
 
 }
 
@@ -266,42 +260,22 @@ timeLineControl.prototype.toggleControls = function(){
 
 //===============================================
 
-timeLineControl.prototype.setEllapsedTime = function(){    
+timeLineControl.prototype.closeControlTimeout = function(){    
+
+    //clear all timeout
+    for (let index = 0; index < this.timouts.length; index++) {
+        window.clearTimeout(this.timouts[index]);
+    }
+    this.timouts = []
+
+    if(this.isPlaying){
     
-    this.userInteracted = true
-    this.ellapsedTime = Date.now() - this.startTime
+        //create new timeout
+        this.timouts.push(window.setTimeout(()=>{ this.closeControls() },this.waitTime))
+
+    }
     
 }
-
-timeLineControl.prototype.detectInactivity = function(){   
-
-    console.log("detecting user inactivity...");
-    
-    if(!this.menuOpen) return
-
-    if(!this.isPlaying){
-        console.log("video is paused try later");
-        this.startTime = Date.now()  
-        setTimeout(()=>{ this.detectInactivity() }, this.waitTime)
-        return    
-    }
-
-    if( !this.userInteracted ) {
-        
-        console.log("user inactive! Closing menu");
-        this.closeControls()
-    
-    }else{
-    
-        console.log("user active! setetting timer to:", this.waitTime, this.ellapsedTime);
-        this.startTime = Date.now()
-        this.userInteracted = false
-        setTimeout(()=>{ this.detectInactivity() }, this.ellapsedTime)
-    
-    }
-
-}
-
 
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////                           Subtitle Control                             /////////
@@ -321,7 +295,6 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
     this.openMenuHeight = (2 * menuItemSizes.margin)  + (_subs.length * menuItemSizes.itemHeight)
     this.menuClosed = false
     this.animationEnded = true
-    this.detectInactivity = function(){}
     this.interactionHandler = function(){}
 
     //-------------------
@@ -438,7 +411,7 @@ subtilteControl.prototype.closeMenu = function () {
 
     }
     
-    // this.detectInactivity()
+    this.interactionHandler()
 
 }
 
