@@ -6,7 +6,7 @@
 function simplePlayer(_videoUrl,_subs) { 
 
     this.container = document.createElement('div')
-    this.container.className = "playerContainer"
+    this.container.className = "playerVideo"
     this.loaded = false
     this.onloaded = function(){ 
         console.log("video loaded")
@@ -14,14 +14,18 @@ function simplePlayer(_videoUrl,_subs) {
     document.body.appendChild(this.container)
     // this.downloadVideo(_videoUrl)
 
+    this.videoContainer = document.createElement('div')
+    this.videoContainer.className = "videoContainer"
+    this.videoContainer.addEventListener('touchstart', e => {
+        this.controls.togglePlay()
+    })
+    this.container.appendChild(this.videoContainer)
+
     this.video = document.createElement('video')
     this.video.isLoaded = false
     this.video.src = _videoUrl
-    this.container.className = "playerVideo"
-    this.container.appendChild(this.video)
-    this.video.addEventListener('touchstart', e => {
-        this.controls.toggleControls()
-    })
+    this.videoContainer.appendChild(this.video)
+
 
     this.video.addEventListener('loadedmetadata', () => { 
 
@@ -47,7 +51,7 @@ function simplePlayer(_videoUrl,_subs) {
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
     
-    this.controls = new timeLineControl( this.video, this.btnsContainer, this.controlContainer, this.container, _subs) 
+    this.controls = new timeLineControl( this.video, this.btnsContainer, this.controlContainer, this.videoContainer, _subs) 
 
 }
 
@@ -80,12 +84,11 @@ function timeLineControl(_video, _parent, _controlContainer, _container, _subs){
 
     this.subtilteControl = new subtilteControl(  _subs, _video, _container, _parent)
     this.subtilteControl.interactionHandler = () => { this.closeControlTimeout() }
-
-    console.log("-----------------");
+    this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,-150px)"
+    
     this.menuOpen = true
     this.timouts = []
     this.waitTime = 3000
-    this.startTime = Date.now()
     this.closeControlTimeout()
 
 }
@@ -100,7 +103,6 @@ timeLineControl.prototype.createDOMelements = function (_parent,_controlContaine
     this.playBtn.className = "play-pause"
     this.container.appendChild(this.playBtn)
     this.playBtn.addEventListener('touchstart', e => {
-        console.log("clocked on plat btn");
         this.togglePlay()
     })
 
@@ -126,12 +128,6 @@ timeLineControl.prototype.createDOMelements = function (_parent,_controlContaine
         var x = e.targetTouches[0].pageX - rect.left;
         this.setCurrentTime(x/rect.width)
     })  
-
-    // this.timeLine.addEventListener('touchend', e => {
-    //     this.detectInactivity()
-        
-    // })
-
 
     this.totalTime = document.createElement('div')
     this.totalTime.className = "totalTime"
@@ -164,12 +160,6 @@ timeLineControl.prototype.setCurrentTime = function (_percentage) {
 
 timeLineControl.prototype.timeUpdated = function (_time) {
 
-    // console.log(this.timeLine.getBoundingClientRect().width)
-    // console.log(_time)
-    // console.log(this.video.duration)
-    // console.log((( this.timeLine.getBoundingClientRect().width * _time) / this.video.duration) + "px")
-    // console.log(">>>>>>>>>>>>>>>>")
-
     var minutes = parseInt(_time/60)
     minutes = minutes.toString().length > 1 ? minutes : ("0" + minutes)
         
@@ -181,7 +171,7 @@ timeLineControl.prototype.timeUpdated = function (_time) {
     
 }
 
-//===============================================
+//=========================================================================
 
 timeLineControl.prototype.play = function (_time) {
     
@@ -224,7 +214,7 @@ timeLineControl.prototype.togglePlay = function (_time) {
 
 }
 
-//===============================================
+//=========================================================================
 
 timeLineControl.prototype.closeControls = function(){    
     
@@ -235,6 +225,9 @@ timeLineControl.prototype.closeControls = function(){
     }, 300)
     this.menuOpen = false
     this.ellapsedTime = 0
+
+    this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,0px)"
+
 }
 
 timeLineControl.prototype.openControls = function(){    
@@ -248,6 +241,8 @@ timeLineControl.prototype.openControls = function(){
     this.menuOpen = true
     this.closeControlTimeout()
 
+    this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,-150px)"
+
 }
 
 timeLineControl.prototype.toggleControls = function(){    
@@ -258,7 +253,7 @@ timeLineControl.prototype.toggleControls = function(){
     
 }
 
-//===============================================
+//=========================================================================
 
 timeLineControl.prototype.closeControlTimeout = function(){    
 
@@ -268,10 +263,15 @@ timeLineControl.prototype.closeControlTimeout = function(){
     }
     this.timouts = []
 
-    if(this.isPlaying){
+    if(this.isPlaying && this.subtilteControl.menuClosed ){
     
         //create new timeout
-        this.timouts.push(window.setTimeout(()=>{ this.closeControls() },this.waitTime))
+        this.timouts.push(window.setTimeout(()=>{ 
+        
+            
+            if(this.isPlaying && this.subtilteControl.menuClosed){ this.closeControls() }
+        
+        },this.waitTime))
 
     }
     
@@ -288,15 +288,27 @@ timeLineControl.prototype.closeControlTimeout = function(){
 function subtilteControl(_subs,_video,_subParent, _controlParent){
 
     //get opened menu height based on subtitle number
-    var menuItemSizes = {
+    this.menuItemSizes = {
         itemHeight : 45,
         margin : 26,
     }
-    this.openMenuHeight = (2 * menuItemSizes.margin)  + (_subs.length * menuItemSizes.itemHeight)
+    this.openMenuHeight = (2 * this.menuItemSizes.margin)  + (_subs.length * this.menuItemSizes.itemHeight)
     this.menuClosed = false
     this.animationEnded = true
     this.interactionHandler = function(){}
+    
+    this.controls = []
+    this.subtitles = []
+    this.activeSubtitle = ""
+    this.defaultSubtitle = false
 
+    this.createDOMelements(_controlParent,_video,_subs,_subParent)
+    this.closeMenu()
+ 
+}
+
+subtilteControl.prototype.createDOMelements = function (_controlParent,_video,_subs,_subParent) {
+    
     //-------------------
     //    container
     //-------------------    
@@ -315,15 +327,10 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
     //-------------------
     //    subtitles
     //-------------------
-    this.controls = []
-    this.subtitles = []
     
     this.subtitlesContainer = document.createElement("div")
     this.subtitlesContainer.className = "subtitlesContainer"
     _video.insertAdjacentElement("afterEnd", this.subtitlesContainer)
-
-    this.activeSubtitle = ""
-    this.defaultSubtitle = false
 
     for(var i = 0; i < _subs.length; i++ ){
         
@@ -350,11 +357,10 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
         this.controlContainer.appendChild(control)
         this.controls.push(control)
 
-        var finalPos = ( menuItemSizes.itemHeight * i) + menuItemSizes.margin
+        var finalPos = ( this.menuItemSizes.itemHeight * i) + this.menuItemSizes.margin
         control.setAttribute("finalpos", finalPos)
-        control.style.transform = "translateY(-" + finalPos +  "px)"
-        control.style.height = menuItemSizes.itemHeight +  "px"
-
+        control.style.transform = "translateY(-" + finalPos + 20 +  "px)"
+        control.style.height = this.menuItemSizes.itemHeight +  "px"
 
         //add subtitles
         var sub;
@@ -369,8 +375,40 @@ function subtilteControl(_subs,_video,_subParent, _controlParent){
  
     }
 
-    this.closeMenu()
- 
+    //-------------------
+    //    icons
+    //-------------------
+
+    this.iconContainer = document.createElement("div")
+    this.iconContainer.className = "iconContainer"
+    this.controlContainer.appendChild(this.iconContainer)
+    this.controlContainer.addEventListener('touchstart', e => {
+
+        if (!this.animationEnded) return
+
+            this.animationEnded = false
+            if(!this.menuClosed){
+                this.closeMenu()
+            }else{
+                this.openMenu()
+            }
+
+    })
+
+    //left
+    this.iconLeft = document.createElement("div")
+    this.iconLeft.className = "subIcon"
+    var leftPos = getXY(-45,4,0)
+    this.iconLeft.style.transform = "rotate(" + leftPos.angle + "deg) translate(" + leftPos.x + "px," + (-leftPos.y) +  "px)"
+    this.iconContainer.appendChild(this.iconLeft)
+
+    //right
+    this.iconRight = document.createElement("div")
+    this.iconRight.className = "subIcon"
+    var rightPos = getXY(45,-4,0)
+    this.iconRight.style.transform = "rotate(" + rightPos.angle + "deg) translate(" + rightPos.x + "px," + (-rightPos.y) +  "px)"
+    this.iconContainer.appendChild(this.iconRight)
+
 }
 
 subtilteControl.prototype.play = function () {
@@ -388,8 +426,23 @@ subtilteControl.prototype.openMenu = function () {
     
     for(var i = 0; i < this.controls.length; i++ ){
         this.controls[i].style.transform = "translateY(-" + this.controls[i].getAttribute("finalpos") +  "px)"
+        this.controls[i].style.transitionDelay = (i * 0.1) + "s" 
         this.controls[i].classList.remove("hidden")    
+
+        if(this.controls[i].id == this.activeSubtitle.id){
+            this.controls[i].style.transitionDelay = "0.05s"
+        }
     }
+    
+    var rightPos = getXY(45,-11,this.openMenuHeight - 63)
+    this.iconRight.style.transform = "rotate(" + rightPos.angle + "deg) translate(" + rightPos.x + "px," + (-rightPos.y) +  "px)"
+    this.iconRight.style.transition = "all 600ms"
+    this.iconRight.style.width = "22px"
+    
+    var leftPos = getXY(-45,11,this.openMenuHeight - 63)
+    this.iconLeft.style.transform = "rotate(" + leftPos.angle + "deg) translate(" + leftPos.x + "px," + (-leftPos.y) +  "px)"
+    this.iconLeft.style.transition = "all 600ms"
+    this.iconLeft.style.width = "22px"
 
     this.interactionHandler()
 
@@ -405,11 +458,24 @@ subtilteControl.prototype.closeMenu = function () {
         if(this.controls[i].id == this.activeSubtitle.id){
             var activeSubElement = this.controls[this.activeSubtitle.id]
             activeSubElement.style.transform = "translateY(-" + 5 +  "px)"
+            activeSubElement.style.transitionDelay = "0s"
         }else{
+            this.controls[i].style.transitionDelay = 0 + "s"
+            this.controls[i].style.transform = "translateY(" + (-this.controls[i].getAttribute("finalpos") + 20)  +  "px)"
             this.controls[i].classList.add("hidden")    
         }
 
     }
+    
+    var leftPos = getXY(-45,4,0)
+    this.iconLeft.style.transform = "rotate(" + leftPos.angle + "deg) translate(" + leftPos.x + "px," + (-leftPos.y) +  "px)"
+    this.iconLeft.style.transition = "all 300ms"
+    this.iconLeft.style.width = "18px"
+    
+    var rightPos = getXY(45,-4,0)
+    this.iconRight.style.transform = "rotate(" + rightPos.angle + "deg) translate(" + rightPos.x + "px," + (-rightPos.y) +  "px)"
+    this.iconRight.style.transition = "all 300ms"
+    this.iconRight.style.width = "18px"
     
     this.interactionHandler()
 
@@ -440,7 +506,6 @@ subtilteControl.prototype.setup = function () {
 
 }
 
-
 //====================================================================
 //===================        Subtitle Class        ===================
 //====================================================================
@@ -456,10 +521,6 @@ function subtitle(_video,_sub,_id,_parent){
     this.track.mode = "hidden"
     _video.appendChild(this.track)
     
-    // console.log(
-    //     _video.textTracks.length,
-    //     _video.textTracks[_video.textTracks.length-1],
-    //     _id)
     _video.textTracks[_video.textTracks.length-1].mode = "hidden"
 
     this.textTrack = _video.textTracks[_video.textTracks.length-1]
@@ -589,4 +650,18 @@ for (let i = 0; i < 1; i++) {
         allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs ))
     
 }
+
+
+function getXY(_deg,_x,_y){
+    var hipotenuse = _y == 0 ?  _x : _y / Math.sin(Math.atan(_y / _x));
+    var _deg2 =  Math.atan(_y / _x) * 180 / Math.PI
+    var angle = _deg + _deg2
+    var y = Math.sin( angle * Math.PI / 180) * hipotenuse
+    var x = Math.cos( angle * Math.PI / 180) * hipotenuse
+    return{
+        x : x,
+        y : y,
+        angle : _deg
+    }
+} 
 

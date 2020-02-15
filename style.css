@@ -117,9 +117,18 @@
    background-color: white;
 }
 
-/* ============== */
-/* subtitle */
-/* ============== */
+.videoContainer{
+
+   width: 100%;
+   height: 100%;
+
+}
+
+/* ============== *//* ============== */
+/* ============== *//* ============== */
+/* ============== *//*    subtitle    */
+/* ============== *//* ============== */
+/* ============== *//* ============== */
 
 .subtitlesContainer{
    position: absolute;
@@ -131,6 +140,7 @@
    height: 128px;
    display: flex;
    justify-content: center;
+   transition: transform 300ms;
 }
 
 .subtitle{
@@ -141,7 +151,7 @@
 .controlBg{
    background-color: white;
    width: 100%;
-   transition: height 400ms;
+   transition: height 300ms;
    transition-delay : 50ms;
 }
 
@@ -154,8 +164,6 @@
    align-items: flex-end;
 } 
 
-
-
 .subControl{
    position: absolute;
    font-size: 20px;
@@ -166,7 +174,7 @@
    display: flex;
    align-items: center;
    opacity: 1;
-   transition : transform 500ms, opacity 200ms;
+   transition : transform 300ms, opacity 300ms;
    font-family: sans-serif;
 }
 
@@ -177,6 +185,7 @@
 
 .subControl.hidden{
    opacity: 0;
+   /* transition : transform 0ms, opacity 0ms; */
 }
 
 .librasVideo{
@@ -185,6 +194,29 @@
    background: rgba(0,0,0,0.2);
    width : 600px !important;
 }
+
+.iconContainer{
+
+   position: absolute;
+   height: 56px;
+   width: 56px;
+   right: 0px;
+   display: flex;
+   align-items: center;
+   justify-content: flex-end;
+   padding-right: 15px;
+
+}
+
+.subIcon{
+   
+   height: 4px;
+   width: 18px;
+   background-color: 282828;
+   transition: all 400ms;
+
+}
+
 /* ===================== */
 /* Play icon */
 /* ===================== */
