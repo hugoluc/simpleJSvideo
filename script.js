@@ -3,7 +3,7 @@
 /////////                               Player class                              ////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-function simplePlayer(_videoUrl,_subs) { 
+function simplePlayer(_videoUrl,_subs,_title) { 
 
     this.container = document.createElement('div')
     this.container.className = "playerVideo"
@@ -51,7 +51,7 @@ function simplePlayer(_videoUrl,_subs) {
     this.btnsContainer.className = "btnsContainer"
     this.controlContainer.appendChild(this.btnsContainer)
     
-    this.controls = new timeLineControl( this.video, this.btnsContainer, this.controlContainer, this.videoContainer, _subs) 
+    this.controls = new timeLineControl( this.video, this.btnsContainer, this.controlContainer, this.videoContainer, _subs, _title ) 
 
 }
 
@@ -65,27 +65,28 @@ simplePlayer.prototype.load = function(){
 
 // Timeline controls
 // Pause/play controls
-function timeLineControl(_video, _parent, _controlContainer, _container, _subs){
+function timeLineControl(_video, _parent, _controlContainer, _container, _subs, _title){
 
     _video.addEventListener('timeupdate', (_event)=>{ 
         if (_event.target.currentTime >= this.video.duration) console.log(" finished ")
         this.timeUpdated(_event.target.currentTime )
     })
 
+    this.titleText = _title
     this.btnsContainer = _parent
     this.video = _video
     this.controlContainer = _controlContainer
 
-    this.isPlaying = false;
+    this.isPlaying = false
     this.userInteracted = false
     this.menuOpen = true
 
-    this.createDOMelements(_parent, _controlContainer)
+    this.createDOMelements(_parent, _controlContainer,_container)
 
     this.subtilteControl = new subtilteControl(  _subs, _video, _container, _parent)
     this.subtilteControl.interactionHandler = () => { this.closeControlTimeout() }
     this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,-150px)"
-    
+
     this.menuOpen = true
     this.timouts = []
     this.waitTime = 3000
@@ -93,11 +94,16 @@ function timeLineControl(_video, _parent, _controlContainer, _container, _subs){
 
 }
 
-timeLineControl.prototype.createDOMelements = function (_parent,_controlContainer) {
+timeLineControl.prototype.createDOMelements = function (_parent,_controlContainer,_container) {
     
     this.container = document.createElement('div')
     this.container.className = "timeLineControls"
     _parent.appendChild(this.container)
+
+    this.title = document.createElement('div')
+    this.title.innerHTML = this.titleText
+    this.title.className = "title"
+    _container.appendChild(this.title)
 
     this.playBtn = document.createElement('div')
     this.playBtn.className = "play-pause"
@@ -227,6 +233,7 @@ timeLineControl.prototype.closeControls = function(){
     this.ellapsedTime = 0
 
     this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,0px)"
+    this.title.classList.toggle("off")  
 
 }
 
@@ -242,6 +249,7 @@ timeLineControl.prototype.openControls = function(){
     this.closeControlTimeout()
 
     this.subtilteControl.subtitlesContainer.style.transform = "translate(0px,-150px)"
+    this.title.classList.toggle("off")  
 
 }
 
@@ -647,7 +655,7 @@ for (let i = 0; i < 1; i++) {
     
         ]
     
-        allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs ))
+        allVids.push(new simplePlayer("videos/" + index +"/video.mp4", subs , "A língua e as variações geográficas"))
     
 }
 
